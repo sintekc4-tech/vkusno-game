@@ -1,0 +1,50 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract game project
+        run: |
+          mkdir game
+          unzip -q vkusno-game-github-apk.zip -d game
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: game
+        run: npm install
+
+      - name: Add Android
+        working-directory: game
+        run: npx cap add android
+
+      - name: Sync Android
+        working-directory: game
+        run: npx cap sync android
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build APK
+        working-directory: game/android
+        run: chmod +x gradlew && ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: vkusno-game-apk
+          path: game/android/app/build/outputs/apk/debug/app-debug.apk
